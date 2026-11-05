@@ -1,9 +1,11 @@
-# Week 8 — Liquidity Vault
+# Week 9 — Vault Deposit and Share Tokens
 
-For Week 8, I started the Anchor framework for my liquidity vault. It can create the vault settings PDA, a share-token mint, a vault token account, and a user position PDA with a share-token account. I also added an admin instruction to pause or resume the vault.
+For Week 9, I added a deposit instruction to the Week 8 vault scaffold. A user deposits the vault's SPL token and receives share tokens in their associated token account.
+
+The first deposit converts between asset and share decimals. Later deposits calculate shares from the vault's asset balance and current share supply. The instruction checks the user's minimum shares, rejects zero or too-small deposits, and does not run while the vault is paused.
 
 ## What I learned
 
-My local Solana CLI was initially 1.18.26, while Anchor 0.31.1 recommends Solana 2.1.0. This caused toolchain problems, so I pinned the project versions in `Anchor.toml`. `cargo check` passed. The SBF build still showed unknown syscall warnings, so I have not treated it as ready to deploy.
+The token transfer and share mint happen in one transaction, so both succeed or neither does. I also added checked arithmetic and validation for inconsistent vault balances.
 
-The vault does not handle deposits or connect to a liquidity pool yet. Those are the next steps.
+The brief does not name a liquidity-pool protocol, so this branch does not add a pool integration or deposit assets into an external pool.
