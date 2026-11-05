@@ -1,9 +1,8 @@
-# Week 8 — Liquidity Vault
+# Solana Superteams — Course Work
 
-For Week 8, I started the Anchor framework for my liquidity vault. It can create the vault settings PDA, a share-token mint, a vault token account, and a user position PDA with a share-token account. I also added an admin instruction to pause or resume the vault.
+This repository tracks my assignments for the Solana Superteams course.
 
-## What I learned
+## Assignments
 
-My local Solana CLI was initially 1.18.26, while Anchor 0.31.1 recommends Solana 2.1.0. This caused toolchain problems, so I pinned the project versions in `Anchor.toml`. `cargo check` passed. The SBF build still showed unknown syscall warnings, so I have not treated it as ready to deploy.
-
-The vault does not handle deposits or connect to a liquidity pool yet. Those are the next steps.
+- **РК1 — topics from Weeks 1–7 (РО2, 5%)**: the brief says there will be questions on these topics. The question list was not included in the materials I received.
+- **Week 8 — BUILD SPRINT: Liquidity Vault**: see the [`week-8` branch](https://github.com/Aliyanur/Solana-Course/tree/week-8). The requested scaffold is implemented: vault settings account, user PDA, and share-token mint. The brief does not name a liquidity-pool protocol, so pool integration is not included. Rust `cargo check` passes; SBF build/deployment still needs clean verification because the build emitted unknown-syscall warnings.
