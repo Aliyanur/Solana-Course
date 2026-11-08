@@ -1,0 +1,35 @@
+{
+  "name": "solana-course",
+  "version": "1.0.0",
+  "description": "Week 11: create test tokens, a Raydium CLMM devnet pool, and a concentrated liquidity position.",
+  "main": "index.js",
+  "scripts": {
+    "week11:create": "tsx scripts/week-11/create-clmm-devnet.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aliyanur/Solana-Course.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aliyanur/Solana-Course/issues"
+  },
+  "homepage": "https://github.com/Aliyanur/Solana-Course#readme",
+  "dependencies": {
+    "@raydium-io/raydium-sdk-v2": "0.2.84-alpha",
+    "@solana/spl-token": "0.4.15",
+    "@solana/web3.js": "1.99.0",
+    "bn.js": "5.2.5",
+    "decimal.js": "10.6.0",
+    "dotenv": "18.0.9"
+  },
+  "devDependencies": {
+    "@types/bn.js": "5.2.0",
+    "@types/node": "26.6.6",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "type": "module"
+}
