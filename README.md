@@ -1,10 +1,8 @@
 # Solana Course
 
-Course: Solana Superteams
+Solana Superteams course assignments.
 
-| Week | Assignment | Branch | Status |
-| --- | --- | --- | --- |
-| 8 | Liquidity Vault scaffold | [week-8](https://github.com/Aliyanur/Solana-Course/tree/week-8) | Completed |
-| 9 | Vault deposits and share tokens | [week-9](https://github.com/Aliyanur/Solana-Course/tree/week-9) | Completed |
-| 10 | CPI withdrawals from vault | [week-10](https://github.com/Aliyanur/Solana-Course/tree/week-10) | Completed |
-| 11 | AMM and concentrated liquidity with Raydium CLMM | [week-11](https://github.com/Aliyanur/Solana-Course/tree/week-11) | In progress: code is ready; devnet transactions need to be run |
+- Week 8 — Liquidity Vault: [week-8 branch](https://github.com/Aliyanur/Solana-Course/tree/week-8)
+- Week 9 — Vault deposits and share tokens: [week-9 branch](https://github.com/Aliyanur/Solana-Course/tree/week-9)
+- Week 10 — CPI and vault withdrawals: [week-10 branch](https://github.com/Aliyanur/Solana-Course/tree/week-10)
+- Week 11 — Raydium CLMM: [week-11 branch](https://github.com/Aliyanur/Solana-Course/tree/week-11)
