@@ -1,9 +1,10 @@
-# Week 10 — CPI and Vault Withdrawals
+# Solana Course
 
-For Week 10, I added a withdrawal instruction to the Liquidity Vault. The user selects how many share tokens to redeem. The program calculates the proportional asset amount, burns those shares through the SPL Token Program, and transfers the assets from the vault token account to the user's account. The vault config PDA signs the transfer CPI.
+Course: Solana Superteams
 
-The instruction checks that the user owns the position and shares, the vault is not paused, and the calculated withdrawal meets the user's minimum. Arithmetic uses checked operations.
-
-## Verification
-
-`cargo check` and formatting checks pass. SBF deployment verification still needs a clean build because the local toolchain reported unknown-syscall warnings.
+| Week | Assignment | Branch | Status |
+| --- | --- | --- | --- |
+| 8 | Liquidity Vault scaffold | [week-8](https://github.com/Aliyanur/Solana-Course/tree/week-8) | Completed |
+| 9 | Vault deposits and share tokens | [week-9](https://github.com/Aliyanur/Solana-Course/tree/week-9) | Completed |
+| 10 | CPI withdrawals from vault | [week-10](https://github.com/Aliyanur/Solana-Course/tree/week-10) | Completed |
+| 11 | AMM and concentrated liquidity with Raydium CLMM | [week-11](https://github.com/Aliyanur/Solana-Course/tree/week-11) | In progress: code is ready; devnet transactions need to be run |
