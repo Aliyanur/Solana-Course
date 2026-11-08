@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { createMint, getAccount, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, PublicKey, clusterApiUrl } from '@solana/web3.js'
 import { Raydium, DEVNET_PROGRAM_ID, TxVersion, getPdaAmmConfigId, TickUtil, type ApiV3Token } from '@raydium-io/raydium-sdk-v2'
 import BN from 'bn.js'
@@ -14,7 +14,11 @@ const secretKey = Uint8Array.from(JSON.parse(await readFile(keypairPath, 'utf8')
 const owner = Keypair.fromSecretKey(secretKey)
 const connection = new Connection(rpcUrl, 'confirmed')
 const balance = await connection.getBalance(owner.publicKey, 'confirmed')
-if (balance < 0.25 * 1_000_000_000) throw new Error('Devnet wallet needs at least 0.25 SOL. Fund it from a devnet faucet and run again.')
+if (balance < 0.25 * 1_000_000_000) {
+  const airdropSignature = await connection.requestAirdrop(owner.publicKey, 2 * 1_000_000_000)
+  const latestBlockhash = await connection.getLatestBlockhash('confirmed')
+  await connection.confirmTransaction({ signature: airdropSignature, ...latestBlockhash }, 'confirmed')
+}
 
 const mintA = await createMint(connection, owner, owner.publicKey, null, 6)
 const mintB = await createMint(connection, owner, owner.publicKey, null, 6)
