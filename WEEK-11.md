@@ -1,13 +1,7 @@
 # Week 11 — Raydium CLMM
 
-I added a script that creates two test tokens on Solana devnet, makes a Raydium CLMM pool at a 1:1 starting price, and opens a position from 0.9 to 1.1. I used the Raydium SDK and SPL Token Program.
+This week I learned how liquidity pools and price ranges works. I made a script for create two test tokens and a Raydium CLMM pool on devnet. I also added a position with price range from 0.9 to 1.1.
 
-The first compile had a few TypeScript type errors, which I fixed. The script compiles now. I could not finish the devnet transactions from this environment because its RPC request failed, so the pool and position addresses will appear in `week-11-devnet-results.json` after a successful run.
+At first I got some TypeScript errors and fixed them. The script compiles now, but I could not create the pool because devnet airdrop returned error 500. So the pool and position is not created yet.
 
-## Run
-
-1. Make sure your Solana wallet is set to devnet and has enough devnet SOL for account creation and transactions.
-2. Keep `HELIUS_API_KEY` in the ignored `.env` file, or set `SOLANA_RPC_URL` to a devnet RPC endpoint.
-3. Install dependencies with `npm install`.
-4. Run `npm run week11:create`.
-5. Save the mint addresses, pool address and transaction signatures from `week-11-devnet-results.json`.
+To try it again, the wallet need devnet SOL. Then run `npm install` and `npm run week11:create`. The addresses and signatures will be saved in `week-11-devnet-results.json` if it works.
