@@ -1,11 +1,9 @@
-# Week 9 — Vault Deposit and Share Tokens
+# Week 10 — CPI and Vault Withdrawals
 
-For Week 9, I added a deposit instruction to the Week 8 vault scaffold. A user deposits the vault's SPL token and receives share tokens in their associated token account.
+For Week 10, I added a withdrawal instruction to the Liquidity Vault. The user selects how many share tokens to redeem. The program calculates the proportional asset amount, burns those shares through the SPL Token Program, and transfers the assets from the vault token account to the user's account. The vault config PDA signs the transfer CPI.
 
-The first deposit converts between asset and share decimals. Later deposits calculate shares from the vault's asset balance and current share supply. The instruction checks the user's minimum shares, rejects zero or too-small deposits, and does not run while the vault is paused.
+The instruction checks that the user owns the position and shares, the vault is not paused, and the calculated withdrawal meets the user's minimum. Arithmetic uses checked operations.
 
-## What I learned
+## Verification
 
-The token transfer and share mint happen in one transaction, so both succeed or neither does. I also added checked arithmetic and validation for inconsistent vault balances.
-
-The brief does not name a liquidity-pool protocol, so this branch does not add a pool integration or deposit assets into an external pool.
+`cargo check` and formatting checks pass. SBF deployment verification still needs a clean build because the local toolchain reported unknown-syscall warnings.

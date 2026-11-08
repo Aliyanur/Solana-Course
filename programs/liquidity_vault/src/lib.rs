@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
 
 declare_id!("5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH");
 
@@ -110,6 +110,77 @@ pub mod liquidity_vault {
             "Deposit: {} asset units for {} share units",
             amount,
             shares_out
+        );
+        Ok(())
+    }
+
+    /// Burns the user's shares and transfers the proportional asset amount from the vault.
+    pub fn withdraw(
+        ctx: Context<Withdraw>,
+        shares_to_burn: u64,
+        min_assets_out: u64,
+    ) -> Result<()> {
+        require!(shares_to_burn > 0, VaultError::SharesAmountZero);
+        require!(!ctx.accounts.config.paused, VaultError::VaultPaused);
+        require!(
+            shares_to_burn <= ctx.accounts.user_position.shares,
+            VaultError::InsufficientPositionShares
+        );
+
+        let assets_before = ctx.accounts.vault_token_account.amount;
+        let shares_before = ctx.accounts.share_mint.supply;
+        require!(
+            assets_before > 0 && shares_before > 0,
+            VaultError::InvalidVaultState
+        );
+
+        let assets_out = (shares_to_burn as u128)
+            .checked_mul(assets_before as u128)
+            .ok_or(VaultError::MathOverflow)?
+            .checked_div(shares_before as u128)
+            .ok_or(VaultError::MathOverflow)?;
+        let assets_out = u64::try_from(assets_out).map_err(|_| VaultError::MathOverflow)?;
+
+        require!(assets_out > 0, VaultError::WithdrawTooSmall);
+        require!(assets_out >= min_assets_out, VaultError::SlippageExceeded);
+
+        token::burn(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                Burn {
+                    mint: ctx.accounts.share_mint.to_account_info(),
+                    from: ctx.accounts.user_share_account.to_account_info(),
+                    authority: ctx.accounts.owner.to_account_info(),
+                },
+            ),
+            shares_to_burn,
+        )?;
+
+        let config_bump = [ctx.accounts.config.bump];
+        let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &config_bump]];
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.vault_token_account.to_account_info(),
+                    to: ctx.accounts.user_asset_account.to_account_info(),
+                    authority: ctx.accounts.config.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            assets_out,
+        )?;
+
+        let position = &mut ctx.accounts.user_position;
+        position.shares = position
+            .shares
+            .checked_sub(shares_to_burn)
+            .ok_or(VaultError::MathOverflow)?;
+
+        msg!(
+            "Withdraw: burned {} share units for {} asset units",
+            shares_to_burn,
+            assets_out
         );
         Ok(())
     }
@@ -260,6 +331,63 @@ pub struct Deposit<'info> {
 }
 
 #[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(
+        seeds = [CONFIG_SEED],
+        bump = config.bump,
+        constraint = !config.paused @ VaultError::VaultPaused
+    )]
+    pub config: Account<'info, VaultConfig>,
+
+    #[account(address = config.asset_mint)]
+    pub asset_mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        address = config.vault_token_account,
+        token::mint = asset_mint,
+        token::authority = config
+    )]
+    pub vault_token_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [SHARE_MINT_SEED],
+        bump = config.share_mint_bump,
+        address = config.share_mint,
+        mint::authority = config
+    )]
+    pub share_mint: Account<'info, Mint>,
+
+    pub owner: Signer<'info>,
+
+    #[account(
+        mut,
+        associated_token::mint = share_mint,
+        associated_token::authority = owner
+    )]
+    pub user_share_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        associated_token::mint = asset_mint,
+        associated_token::authority = owner
+    )]
+    pub user_asset_account: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [USER_POSITION_SEED, config.key().as_ref(), owner.key().as_ref()],
+        bump = user_position.bump,
+        has_one = owner,
+        has_one = config
+    )]
+    pub user_position: Account<'info, UserPosition>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
 pub struct SetPaused<'info> {
     #[account(
         mut,
@@ -305,6 +433,12 @@ pub enum VaultError {
     MathOverflow,
     #[msg("Deposit is too small to mint one share unit")]
     DepositTooSmall,
-    #[msg("Calculated shares are below the user's minimum")]
+    #[msg("Shares to burn must be greater than zero")]
+    SharesAmountZero,
+    #[msg("User position does not contain enough shares")]
+    InsufficientPositionShares,
+    #[msg("Withdrawal is too small to return one asset unit")]
+    WithdrawTooSmall,
+    #[msg("Calculated amount is below the user's minimum")]
     SlippageExceeded,
 }
