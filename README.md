@@ -9,4 +9,15 @@ Solana Superteams course assignments.
 
 ## Week 11 — Raydium CLMM
 
-For this task I learned about liquidity pools and price ranges. I wrote a script for make two test tokens and create Raydium CLMM pool on devnet, with a position from 0.9 to 1.1. At first I had some TypeScript mistakes but I fixed it and script compile now. I could not finish the devnet transactions because my wallet has no devnet SOL and the airdrop request failed.
+This week I learned how liquidity pools and price ranges works. I created two test tokens on devnet, made a Raydium CLMM pool and opened a position from 0.9 to 1.1. I used 100 STUDENT_B for the position.
+
+At first I had some mistakes with Decimal import and the slippage amount. I also got an error when I tried to read the new pool info. I fixed it and run the script again. Now both pool and position transaction is confirmed on devnet.
+
+- Token A: [STUDENT_A mint](https://explorer.solana.com/address/8SbNbt2fXwpALoegEDGhUt2n9KnCbFTG4xg6LU18WQYZ?cluster=devnet)
+- Token B: [STUDENT_B mint](https://explorer.solana.com/address/4WW32cTZrLnPBvdD9eAmVaYdyAm2Gvp3KzGyU9t7F2c8?cluster=devnet)
+- [CLMM pool](https://explorer.solana.com/address/G4a4wNJX5wm1FwgtFCN5Df6cjNmMEvbbstbuJ47iLene?cluster=devnet)
+- [Pool transaction](https://explorer.solana.com/tx/5TxdiQ3h6fKGsb4ic1S3LdsApicQRkZmyA4TrcNqesigvQtEGPzj9Z1XkT1YSmU8aBYz3xPsEg2h4i4xzug717JJ?cluster=devnet)
+- [Position NFT](https://explorer.solana.com/address/AwnFVmv9AhcfymNfxc4Hr9K3WW4D3wDbMvzd9gYoP7rP?cluster=devnet)
+- [Position transaction](https://explorer.solana.com/tx/59zwnhGfoK1UBXwBx2Y5ajsfiQdnAzHUoMqKBjGLJcVLJqSbKGKh9TVty5SLz3j98wSjnsH4t6z4vKUURvxrLd6s?cluster=devnet)
+
+Full results are in `week-11-devnet-results.json`.

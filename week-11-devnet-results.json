@@ -1,0 +1,45 @@
+{
+  "network": "devnet",
+  "owner": "9S3hAYkk3E5zirtVy5L8kkhAG4EkyHSKqTno9n7z6M1X",
+  "tokens": [
+    {
+      "symbol": "STUDENT_A",
+      "mint": "8SbNbt2fXwpALoegEDGhUt2n9KnCbFTG4xg6LU18WQYZ",
+      "decimals": 6
+    },
+    {
+      "symbol": "STUDENT_B",
+      "mint": "4WW32cTZrLnPBvdD9eAmVaYdyAm2Gvp3KzGyU9t7F2c8",
+      "decimals": 6
+    }
+  ],
+  "pool": "G4a4wNJX5wm1FwgtFCN5Df6cjNmMEvbbstbuJ47iLene",
+  "initialPrice": "1 STUDENT_A per STUDENT_B",
+  "position": {
+    "tickLower": -1080,
+    "tickUpper": 900,
+    "priceLower": "0.9",
+    "priceUpper": "1.1",
+    "baseAmount": "100 STUDENT_B",
+    "nftMint": "AwnFVmv9AhcfymNfxc4Hr9K3WW4D3wDbMvzd9gYoP7rP",
+    "priceUnit": "STUDENT_A per STUDENT_B"
+  },
+  "signatures": {
+    "tokenA": [
+      "4ZqjcRr4V2PFkrgagpJwn1FVb634EB62y5c6XGGCDEWHxPxSVvVAm1soDg375HkSNLcZHAxktTkZSmwQirzDgqcZ",
+      "4bARTt1PUqxPojkFmkDZ1Xe8iHGBREdAiCZHcDAZfFxPJE4mCGKcV9qgfUVtg83WE5qoS7pyYBW1ox1y9Fd1yLaa",
+      "4zzmeQqVzqhrLoqQKoePqjZ5kWLU7xnViQubFa41gSu75jchdq1uqCJzbmPWuMBzNX3ekyUuQ7Gu1DXsQP2C9Bh3"
+    ],
+    "tokenB": [
+      "3ppFUrJ9npgGTjeF5rBJjLDzs9ixy8xnmfcjeSZCLxDdGxMowPPioGGLYab7xzxtVYC9bMbt74u6tVyTQpYw8FJY",
+      "3snLCfET64X2NLpzCmMGF2gVAssjQMpxFs6KhtWp2wCJAjqkxSunYGpaTz6hXMHjW43CFTHwZXfEtVURAQafS7Tg",
+      "4NEX2LQNc1oR6j3jGCSZonFYtQma3qxtbtum8T7qFxWFi72iUdrcZgFbymG3rcisQjUU6ijYiS2yRt4yf4SX2CvQ"
+    ],
+    "pool": "5TxdiQ3h6fKGsb4ic1S3LdsApicQRkZmyA4TrcNqesigvQtEGPzj9Z1XkT1YSmU8aBYz3xPsEg2h4i4xzug717JJ",
+    "position": "59zwnhGfoK1UBXwBx2Y5ajsfiQdnAzHUoMqKBjGLJcVLJqSbKGKh9TVty5SLz3j98wSjnsH4t6z4vKUURvxrLd6s"
+  },
+  "poolTokenOrder": {
+    "tokenA": "STUDENT_B",
+    "tokenB": "STUDENT_A"
+  }
+}
