@@ -9,4 +9,4 @@ Solana Superteams course assignments.
 
 ## Week 11 — Raydium CLMM
 
-For this task I learned about liquidity pools and price ranges. I wrote a script for make two test tokens and create Raydium CLMM pool on devnet, with a position from 0.9 to 1.1. At first I had some TypeScript mistakes but I fixed it and script compile now. I could not create pool because devnet airdrop give error 500, so pool is not created yet.
+For this task I learned about liquidity pools and price ranges. I wrote a script for make two test tokens and create Raydium CLMM pool on devnet, with a position from 0.9 to 1.1. At first I had some TypeScript mistakes but I fixed it and script compile now. I could not finish the devnet transactions because my wallet has no devnet SOL and the airdrop request failed.

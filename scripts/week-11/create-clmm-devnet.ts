@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { Connection, Keypair, PublicKey, clusterApiUrl } from '@solana/web3.js'
-import { Raydium, DEVNET_PROGRAM_ID, TxVersion, getPdaAmmConfigId, TickUtil, type ApiV3Token } from '@raydium-io/raydium-sdk-v2'
+import { Raydium, DEVNET_PROGRAM_ID, TxVersion, getPdaAmmConfigId, TickUtil, PoolUtils, type ApiV3Token } from '@raydium-io/raydium-sdk-v2'
 import BN from 'bn.js'
 import Decimal from 'decimal.js'
 import { readFile, writeFile } from 'node:fs/promises'
@@ -14,10 +14,8 @@ const secretKey = Uint8Array.from(JSON.parse(await readFile(keypairPath, 'utf8')
 const owner = Keypair.fromSecretKey(secretKey)
 const connection = new Connection(rpcUrl, 'confirmed')
 const balance = await connection.getBalance(owner.publicKey, 'confirmed')
-if (balance < 0.25 * 1_000_000_000) {
-  const airdropSignature = await connection.requestAirdrop(owner.publicKey, 2 * 1_000_000_000)
-  const latestBlockhash = await connection.getLatestBlockhash('confirmed')
-  await connection.confirmTransaction({ signature: airdropSignature, ...latestBlockhash }, 'confirmed')
+if (balance < 1.5 * 1_000_000_000) {
+  throw new Error(`Wallet has ${(balance / 1_000_000_000).toFixed(3)} devnet SOL. Get at least 1.5 SOL from a devnet faucet, then run this script again.`)
 }
 
 const mintA = await createMint(connection, owner, owner.publicKey, null, 6)
@@ -66,17 +64,32 @@ const poolId = new PublicKey(poolCreation.extInfo.address.id)
 const poolData = await raydium.clmm.getPoolInfoFromRpc(poolId.toBase58())
 const rangeLower = new Decimal.Decimal('0.9')
 const rangeUpper = new Decimal.Decimal('1.1')
-const tickLower = TickUtil.priceToTick(rangeLower, 6, 6)
-const tickUpper = TickUtil.priceToTick(rangeUpper, 6, 6)
-const position = await raydium.clmm.openPositionFromBase({
+const spacing = poolData.poolInfo.config.tickSpacing
+const tickAtLower = TickUtil.getPriceAndTick({ price: rangeLower, mintADecimals: 6, mintBDecimals: 6, zeroForOne: true, tickSpacing: spacing }).tick
+const tickAtUpper = TickUtil.getPriceAndTick({ price: rangeUpper, mintADecimals: 6, mintBDecimals: 6, zeroForOne: true, tickSpacing: spacing }).tick
+const tickLower = Math.min(tickAtLower, tickAtUpper)
+const tickUpper = Math.max(tickAtLower, tickAtUpper)
+const baseAmount = new BN('100000000')
+const positionAmounts = await PoolUtils.getLiquidityAmountOutFromAmountIn({
   poolInfo: poolData.poolInfo as never,
+  inputA: true,
+  tickLower,
+  tickUpper,
+  amount: baseAmount,
+  slippage: 1,
+  add: true,
+  epochInfo: await raydium.fetchEpochInfo(),
+  amountHasFee: true
+})
+const position = await raydium.clmm.openPositionFromBase({
+  poolInfo: poolData.poolInfo,
   poolKeys: poolData.poolKeys,
   ownerInfo: { useSOLBalance: true },
   tickLower,
   tickUpper,
   base: 'MintA',
-  baseAmount: new BN('100000000'),
-  otherAmountMax: new BN('110000000'),
+  baseAmount,
+  otherAmountMax: positionAmounts.amountSlippageB.amount,
   txVersion: TxVersion.V0
 })
 const positionResult = await position.execute({ sendAndConfirm: true })
@@ -87,7 +100,7 @@ const result = {
   tokens: [{ symbol: 'STUDENT_A', mint: mintA.toBase58(), decimals: 6 }, { symbol: 'STUDENT_B', mint: mintB.toBase58(), decimals: 6 }],
   pool: poolId.toBase58(),
   initialPrice: '1 STUDENT_B per STUDENT_A',
-  position: { tickLower, tickUpper, priceLower: rangeLower.toString(), priceUpper: rangeUpper.toString(), baseAmount: '100 STUDENT_A' },
+  position: { tickLower, tickUpper, priceLower: rangeLower.toString(), priceUpper: rangeUpper.toString(), baseAmount: '100 STUDENT_A', nftMint: position.extInfo.nftMint.toBase58() },
   signatures: { pool: poolSignature, position: positionSignature }
 }
 await writeFile('week-11-devnet-results.json', `${JSON.stringify(result, null, 2)}\n`)
