@@ -1,6 +1,15 @@
 {
   "network": "devnet",
   "owner": "9S3hAYkk3E5zirtVy5L8kkhAG4EkyHSKqTno9n7z6M1X",
+  "vaultProgram": "5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH",
+  "vaultConfig": "G5atWCrsiuATrz8GFSzvoqcXnVWDcBLQjqvAMtsjqhXg",
+  "vaultInput": "4qjFJLJVeCrmCTdSKvSoMCa8ZG1kXuF8MJbEzx53adjT",
+  "vaultOutput": "JDwTmRVubL4FRMr8tJCxQViv1CTrp17JypycmwqZQuCP",
+  "vaultDeposit": {
+    "symbol": "STUDENT_A",
+    "amount": "1",
+    "rawAmount": "1000000"
+  },
   "pool": "G4a4wNJX5wm1FwgtFCN5Df6cjNmMEvbbstbuJ47iLene",
   "input": {
     "symbol": "STUDENT_A",
@@ -11,13 +20,14 @@
   "output": {
     "symbol": "STUDENT_B",
     "mint": "4WW32cTZrLnPBvdD9eAmVaYdyAm2Gvp3KzGyU9t7F2c8",
-    "amountRaw": "99745"
+    "amountRaw": "99736"
   },
   "minAmountOut": "95000",
   "slippageBps": 500,
-  "inputBalanceBefore": "999880534325",
-  "inputBalanceAfter": "999880434325",
-  "outputBalanceBefore": "999900000000",
-  "outputBalanceAfter": "999900099745",
-  "signature": "3nYiSCvBDe2WoQJAoqrDfgDnyZJjpVtQDdQrJrAkYtU8bMGFPhUdPaKx1ohzMCdfBZysvovP381EB1fxzHbHzGQD"
+  "inputBalanceBefore": "1000000",
+  "inputBalanceAfter": "900000",
+  "outputBalanceBefore": "0",
+  "outputBalanceAfter": "99736",
+  "programDeploymentSignature": "4EGdsJscBaVnRXJuLZABppsXsCypp5ChCqNyeEX3NhZeczt7kE9jQQVu4myJtgjduVf6fMqdEqwMtiKDquBk2B7k",
+  "signature": "3X28Kge2aWT4MEff7Pg3Z24EFf1F7yuViyETYzaeBPNwzmDnxwPKBVdCkcJhAZKy9JpXuei7Nb48iSW58T9Y9Aen"
 }

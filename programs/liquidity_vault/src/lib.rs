@@ -1,12 +1,17 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
+use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::memo::Memo;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::token_2022::Token2022;
 
 declare_id!("5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH");
 
 pub const CONFIG_SEED: &[u8] = b"config";
 pub const SHARE_MINT_SEED: &[u8] = b"share-mint";
 pub const USER_POSITION_SEED: &[u8] = b"user";
+pub const RAYDIUM_CLMM_PROGRAM_ID: Pubkey = pubkey!("DRayAUgENGQBKVaX8owNhgzkEDyoHTGVEGHVJT1E9pfH");
 
 #[program]
 pub mod liquidity_vault {
@@ -182,6 +187,98 @@ pub mod liquidity_vault {
             shares_to_burn,
             assets_out
         );
+        Ok(())
+    }
+
+    pub fn swap_via_clmm<'info>(
+        ctx: Context<'_, '_, '_, 'info, SwapViaClmm<'info>>,
+        amount_in: u64,
+        min_amount_out: u64,
+    ) -> Result<()> {
+        require!(amount_in > 0, VaultError::AmountZero);
+        require!(min_amount_out > 0, VaultError::SlippageExceeded);
+        require!(!ctx.accounts.config.paused, VaultError::VaultPaused);
+        require!(
+            ctx.accounts.input_mint.key() != ctx.accounts.output_mint.key(),
+            VaultError::SameSwapMint
+        );
+        require!(
+            ctx.accounts.vault_input.amount >= amount_in,
+            VaultError::InsufficientVaultBalance
+        );
+
+        let input_before = ctx.accounts.vault_input.amount;
+        let output_before = ctx.accounts.vault_output.amount;
+        let mut data = vec![43, 4, 237, 11, 26, 201, 30, 98];
+        data.extend_from_slice(&amount_in.to_le_bytes());
+        data.extend_from_slice(&min_amount_out.to_le_bytes());
+        data.extend_from_slice(&0u128.to_le_bytes());
+        data.push(1);
+
+        let mut metas = vec![
+            AccountMeta::new_readonly(ctx.accounts.config.key(), true),
+            AccountMeta::new_readonly(ctx.accounts.amm_config.key(), false),
+            AccountMeta::new(ctx.accounts.pool_state.key(), false),
+            AccountMeta::new(ctx.accounts.vault_input.key(), false),
+            AccountMeta::new(ctx.accounts.vault_output.key(), false),
+            AccountMeta::new(ctx.accounts.pool_input_vault.key(), false),
+            AccountMeta::new(ctx.accounts.pool_output_vault.key(), false),
+            AccountMeta::new(ctx.accounts.observation_state.key(), false),
+            AccountMeta::new_readonly(ctx.accounts.token_program.key(), false),
+            AccountMeta::new_readonly(ctx.accounts.token_program_2022.key(), false),
+            AccountMeta::new_readonly(ctx.accounts.memo_program.key(), false),
+            AccountMeta::new_readonly(ctx.accounts.input_mint.key(), false),
+            AccountMeta::new_readonly(ctx.accounts.output_mint.key(), false),
+        ];
+        let mut account_infos = vec![
+            ctx.accounts.config.to_account_info(),
+            ctx.accounts.amm_config.to_account_info(),
+            ctx.accounts.pool_state.to_account_info(),
+            ctx.accounts.vault_input.to_account_info(),
+            ctx.accounts.vault_output.to_account_info(),
+            ctx.accounts.pool_input_vault.to_account_info(),
+            ctx.accounts.pool_output_vault.to_account_info(),
+            ctx.accounts.observation_state.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.token_program_2022.to_account_info(),
+            ctx.accounts.memo_program.to_account_info(),
+            ctx.accounts.input_mint.to_account_info(),
+            ctx.accounts.output_mint.to_account_info(),
+        ];
+
+        for account in ctx.remaining_accounts {
+            metas.push(if account.is_writable {
+                AccountMeta::new(*account.key, account.is_signer)
+            } else {
+                AccountMeta::new_readonly(*account.key, account.is_signer)
+            });
+            account_infos.push(account.clone());
+        }
+
+        let instruction = Instruction {
+            program_id: RAYDIUM_CLMM_PROGRAM_ID,
+            accounts: metas,
+            data,
+        };
+        account_infos.push(ctx.accounts.raydium_program.to_account_info());
+        let bump = [ctx.accounts.config.bump];
+        let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &bump]];
+        invoke_signed(&instruction, &account_infos, signer_seeds)?;
+
+        ctx.accounts.vault_input.reload()?;
+        ctx.accounts.vault_output.reload()?;
+        let spent = input_before
+            .checked_sub(ctx.accounts.vault_input.amount)
+            .ok_or(VaultError::MathOverflow)?;
+        let received = ctx
+            .accounts
+            .vault_output
+            .amount
+            .checked_sub(output_before)
+            .ok_or(VaultError::MathOverflow)?;
+        require!(spent == amount_in, VaultError::UnexpectedSwapInput);
+        require!(received >= min_amount_out, VaultError::SlippageExceeded);
+        msg!("Vault CLMM swap: spent {}, received {}", spent, received);
         Ok(())
     }
 
@@ -388,6 +485,57 @@ pub struct Withdraw<'info> {
 }
 
 #[derive(Accounts)]
+pub struct SwapViaClmm<'info> {
+    #[account(seeds = [CONFIG_SEED], bump = config.bump, has_one = admin)]
+    pub config: Account<'info, VaultConfig>,
+
+    pub admin: Signer<'info>,
+
+    #[account(address = config.asset_mint)]
+    pub input_mint: Account<'info, Mint>,
+
+    pub output_mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        address = config.vault_token_account,
+        token::mint = input_mint,
+        token::authority = config
+    )]
+    pub vault_input: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        token::mint = output_mint,
+        token::authority = config
+    )]
+    pub vault_output: Account<'info, TokenAccount>,
+
+    pub amm_config: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub pool_state: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub pool_input_vault: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub pool_output_vault: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub observation_state: UncheckedAccount<'info>,
+
+    pub token_program: Program<'info, Token>,
+
+    pub token_program_2022: Program<'info, Token2022>,
+
+    pub memo_program: Program<'info, Memo>,
+
+    #[account(address = RAYDIUM_CLMM_PROGRAM_ID)]
+    pub raydium_program: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
 pub struct SetPaused<'info> {
     #[account(
         mut,
@@ -441,4 +589,10 @@ pub enum VaultError {
     WithdrawTooSmall,
     #[msg("Calculated amount is below the user's minimum")]
     SlippageExceeded,
+    #[msg("Input and output token mints must be different")]
+    SameSwapMint,
+    #[msg("Vault does not have enough input tokens")]
+    InsufficientVaultBalance,
+    #[msg("Swap did not use the requested input amount")]
+    UnexpectedSwapInput,
 }

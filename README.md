@@ -24,8 +24,12 @@ I saved the token, pool and position addresses in `week-11-devnet-results.json`.
 
 # Week 12 — Swap through Raydium CLMM
 
-This week I made a swap script for the pool from last week. It swaps STUDENT_A to STUDENT_B and I set minimum amount, so it should fail if slippage is too high. I checked token balances before and after the swap on devnet. I used the token accounts from my devnet wallet for this swap, I did not connect it with the vault PDA yet.
+This week I added a swap instruction in my vault program. It uses the vault PDA to sign the CPI to Raydium CLMM. The user gives a minimum output amount, and the swap fail if the pool cannot give this amount. I deposited STUDENT_A to the vault and swapped 0.1 into STUDENT_B on devnet.
 
-I had some trouble with the tick array accounts first, but after loading pool info from RPC it was working. I swapped 0.1 STUDENT_A and got 0.099745 STUDENT_B. I saved the swap result in `week-12-devnet-results.json`.
+I had some problems with the account list for CPI. After I added the pool and tick array accounts it worked. I got 0.099736 STUDENT_B, and the minimum was 0.095. I saved vault addresses and balances in `week-12-devnet-results.json`.
 
-Swap transaction: [open in Explorer](https://explorer.solana.com/tx/3nYiSCvBDe2WoQJAoqrDfgDnyZJjpVtQDdQrJrAkYtU8bMGFPhUdPaKx1ohzMCdfBZysvovP381EB1fxzHbHzGQD?cluster=devnet)
+Swap transaction: [open in Explorer](https://explorer.solana.com/tx/3X28Kge2aWT4MEff7Pg3Z24EFf1F7yuViyETYzaeBPNwzmDnxwPKBVdCkcJhAZKy9JpXuei7Nb48iSW58T9Y9Aen?cluster=devnet)
+
+Vault program: [open in Explorer](https://explorer.solana.com/address/5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH?cluster=devnet)
+
+Vault program deployment: [open in Explorer](https://explorer.solana.com/tx/4EGdsJscBaVnRXJuLZABppsXsCypp5ChCqNyeEX3NhZeczt7kE9jQQVu4myJtgjduVf6fMqdEqwMtiKDquBk2B7k?cluster=devnet)

@@ -9,6 +9,9 @@ skip-lint = false
 [programs.localnet]
 liquidity_vault = "5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH"
 
+[programs.devnet]
+liquidity_vault = "5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH"
+
 [provider]
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
