@@ -1,10 +1,11 @@
 {
   "name": "solana-course",
   "version": "1.0.0",
-  "description": "Week 11: create test tokens, a Raydium CLMM devnet pool, and a concentrated liquidity position.",
+  "description": "Solana Superteams course work with a Raydium CLMM devnet swap.",
   "main": "index.js",
   "scripts": {
-    "week11:create": "tsx scripts/week-11/create-clmm-devnet.ts"
+    "week11:create": "tsx scripts/week-11/create-clmm-devnet.ts",
+    "week12:swap": "tsx scripts/week-12/swap-clmm-devnet.ts"
   },
   "repository": {
     "type": "git",

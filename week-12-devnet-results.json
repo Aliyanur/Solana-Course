@@ -1,0 +1,23 @@
+{
+  "network": "devnet",
+  "owner": "9S3hAYkk3E5zirtVy5L8kkhAG4EkyHSKqTno9n7z6M1X",
+  "pool": "G4a4wNJX5wm1FwgtFCN5Df6cjNmMEvbbstbuJ47iLene",
+  "input": {
+    "symbol": "STUDENT_A",
+    "mint": "8SbNbt2fXwpALoegEDGhUt2n9KnCbFTG4xg6LU18WQYZ",
+    "amount": "0.1",
+    "rawAmount": "100000"
+  },
+  "output": {
+    "symbol": "STUDENT_B",
+    "mint": "4WW32cTZrLnPBvdD9eAmVaYdyAm2Gvp3KzGyU9t7F2c8",
+    "amountRaw": "99745"
+  },
+  "minAmountOut": "95000",
+  "slippageBps": 500,
+  "inputBalanceBefore": "999880534325",
+  "inputBalanceAfter": "999880434325",
+  "outputBalanceBefore": "999900000000",
+  "outputBalanceAfter": "999900099745",
+  "signature": "3nYiSCvBDe2WoQJAoqrDfgDnyZJjpVtQDdQrJrAkYtU8bMGFPhUdPaKx1ohzMCdfBZysvovP381EB1fxzHbHzGQD"
+}

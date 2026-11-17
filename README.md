@@ -6,6 +6,7 @@ Solana Superteams course assignments.
 - Week 9 — Vault deposits and share tokens: [week-9 branch](https://github.com/Aliyanur/Solana-Course/tree/week-9)
 - Week 10 — CPI and vault withdrawals: [week-10 branch](https://github.com/Aliyanur/Solana-Course/tree/week-10)
 - Week 11 — Raydium CLMM: [week-11 branch](https://github.com/Aliyanur/Solana-Course/tree/week-11)
+- Week 12 — Swap through Raydium CLMM: [week-12 branch](https://github.com/Aliyanur/Solana-Course/tree/week-12)
 
 # Week 11 — Raydium CLMM
 
@@ -20,3 +21,11 @@ Pool transaction: [open in Explorer](https://explorer.solana.com/tx/5TxdiQ3h6fKG
 Position transaction: [open in Explorer](https://explorer.solana.com/tx/59zwnhGfoK1UBXwBx2Y5ajsfiQdnAzHUoMqKBjGLJcVLJqSbKGKh9TVty5SLz3j98wSjnsH4t6z4vKUURvxrLd6s?cluster=devnet)
 
 I saved the token, pool and position addresses in `week-11-devnet-results.json`.
+
+# Week 12 — Swap through Raydium CLMM
+
+This week I made a swap script for the pool from last week. It swaps STUDENT_A to STUDENT_B and I set minimum amount, so it should fail if slippage is too high. I checked token balances before and after the swap on devnet. I used the token accounts from my devnet wallet for this swap, I did not connect it with the vault PDA yet.
+
+I had some trouble with the tick array accounts first, but after loading pool info from RPC it was working. I swapped 0.1 STUDENT_A and got 0.099745 STUDENT_B. I saved the swap result in `week-12-devnet-results.json`.
+
+Swap transaction: [open in Explorer](https://explorer.solana.com/tx/3nYiSCvBDe2WoQJAoqrDfgDnyZJjpVtQDdQrJrAkYtU8bMGFPhUdPaKx1ohzMCdfBZysvovP381EB1fxzHbHzGQD?cluster=devnet)
