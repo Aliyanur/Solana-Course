@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "week11:create": "tsx scripts/week-11/create-clmm-devnet.ts",
-    "week12:swap": "tsx scripts/week-12/swap-clmm-devnet.ts"
+    "week12:swap": "tsx scripts/week-12/swap-clmm-devnet.ts",
+    "week13:position": "tsx scripts/week-13/manage-clmm-position.ts"
   },
   "repository": {
     "type": "git",

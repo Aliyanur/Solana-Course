@@ -282,6 +282,130 @@ pub mod liquidity_vault {
         Ok(())
     }
 
+    pub fn manage_clmm_position<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManageClmmPosition<'info>>,
+        instruction_data: Vec<u8>,
+        account_flags: Vec<u8>,
+    ) -> Result<()> {
+        require!(
+            instruction_data.len() >= 8,
+            VaultError::InvalidClmmInstruction
+        );
+        let discriminator = &instruction_data[..8];
+        let open_position = discriminator == [77, 184, 74, 214, 112, 86, 241, 199];
+        let decrease_liquidity = discriminator == [58, 127, 188, 62, 79, 82, 196, 96];
+        let close_position = discriminator == [123, 134, 81, 0, 49, 68, 98, 98];
+        require!(
+            open_position || decrease_liquidity || close_position,
+            VaultError::InvalidClmmInstruction
+        );
+        require!(
+            ctx.remaining_accounts.len() == account_flags.len(),
+            VaultError::InvalidPositionAccounts
+        );
+        require!(
+            ctx.remaining_accounts
+                .iter()
+                .any(|account| account.key() == ctx.accounts.config.key())
+                && ctx
+                    .remaining_accounts
+                    .iter()
+                    .any(|account| account.key() == ctx.accounts.position_nft_mint.key())
+                && ctx
+                    .remaining_accounts
+                    .iter()
+                    .any(|account| account.key() == ctx.accounts.position_nft_account.key()),
+            VaultError::InvalidPositionAccounts
+        );
+        if open_position || decrease_liquidity {
+            require!(
+                ctx.remaining_accounts
+                    .iter()
+                    .any(|account| account.key() == ctx.accounts.vault_token_a.key())
+                    && ctx
+                        .remaining_accounts
+                        .iter()
+                        .any(|account| account.key() == ctx.accounts.vault_token_b.key()),
+                VaultError::InvalidPositionAccounts
+            );
+            require_keys_eq!(
+                ctx.accounts.vault_token_a.owner,
+                ctx.accounts.config.key(),
+                VaultError::InvalidPositionAccounts
+            );
+            require_keys_eq!(
+                ctx.accounts.vault_token_b.owner,
+                ctx.accounts.config.key(),
+                VaultError::InvalidPositionAccounts
+            );
+        }
+        let expected_nft_account = anchor_spl::associated_token::get_associated_token_address(
+            &ctx.accounts.config.key(),
+            &ctx.accounts.position_nft_mint.key(),
+        );
+        require_keys_eq!(
+            ctx.accounts.position_nft_account.key(),
+            expected_nft_account,
+            VaultError::InvalidPositionAccounts
+        );
+        if !open_position {
+            let account_data = ctx.accounts.position_nft_account.try_borrow_data()?;
+            let mut data: &[u8] = &account_data;
+            let nft_account = TokenAccount::try_deserialize(&mut data)
+                .map_err(|_| error!(VaultError::InvalidPositionAccounts))?;
+            require_keys_eq!(
+                nft_account.owner,
+                ctx.accounts.config.key(),
+                VaultError::InvalidPositionAccounts
+            );
+            require_keys_eq!(
+                nft_account.mint,
+                ctx.accounts.position_nft_mint.key(),
+                VaultError::InvalidPositionAccounts
+            );
+            require!(nft_account.amount == 1, VaultError::InvalidPositionAccounts);
+        } else {
+            require!(
+                ctx.accounts.position_nft_mint.is_signer,
+                VaultError::InvalidPositionAccounts
+            );
+        }
+
+        let mut metas = Vec::with_capacity(ctx.remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(ctx.remaining_accounts.len() + 1);
+        for (info, flags) in ctx.remaining_accounts.iter().zip(account_flags.iter()) {
+            require!(flags & !3 == 0, VaultError::InvalidPositionAccounts);
+            let key = info.key();
+            let is_signer = flags & 1 != 0;
+            let is_writable = flags & 2 != 0;
+            require!(
+                !is_signer || info.is_signer || key == ctx.accounts.config.key(),
+                VaultError::InvalidPositionAccounts
+            );
+            require!(
+                !is_writable || info.is_writable,
+                VaultError::InvalidPositionAccounts
+            );
+            metas.push(if is_writable {
+                AccountMeta::new(key, is_signer)
+            } else {
+                AccountMeta::new_readonly(key, is_signer)
+            });
+            account_infos.push(info.clone());
+        }
+        let instruction = Instruction {
+            program_id: RAYDIUM_CLMM_PROGRAM_ID,
+            accounts: metas,
+            data: instruction_data,
+        };
+        account_infos.push(ctx.accounts.raydium_program.to_account_info());
+        let bump = [ctx.accounts.config.bump];
+        let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &bump]];
+        invoke_signed(&instruction, &account_infos, signer_seeds)?;
+        msg!("Vault CLMM position instruction completed");
+        Ok(())
+    }
+
     /// Allows the configured administrator to pause or resume future vault actions.
     pub fn set_paused(ctx: Context<SetPaused>, paused: bool) -> Result<()> {
         ctx.accounts.config.paused = paused;
@@ -536,6 +660,29 @@ pub struct SwapViaClmm<'info> {
 }
 
 #[derive(Accounts)]
+pub struct ManageClmmPosition<'info> {
+    #[account(seeds = [CONFIG_SEED], bump = config.bump, has_one = admin)]
+    pub config: Account<'info, VaultConfig>,
+
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    pub position_nft_mint: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub position_nft_account: UncheckedAccount<'info>,
+
+    #[account(mut, token::authority = config)]
+    pub vault_token_a: Account<'info, TokenAccount>,
+
+    #[account(mut, token::authority = config)]
+    pub vault_token_b: Account<'info, TokenAccount>,
+
+    #[account(address = RAYDIUM_CLMM_PROGRAM_ID)]
+    pub raydium_program: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
 pub struct SetPaused<'info> {
     #[account(
         mut,
@@ -595,4 +742,10 @@ pub enum VaultError {
     InsufficientVaultBalance,
     #[msg("Swap did not use the requested input amount")]
     UnexpectedSwapInput,
+    #[msg("Only Raydium CLMM open, decrease, and close position instructions are allowed")]
+    InvalidClmmInstruction,
+    #[msg("Position CPI accounts do not match the vault")]
+    InvalidPositionAccounts,
+    #[msg("One of the Raydium position accounts was not provided")]
+    MissingClmmAccount,
 }
