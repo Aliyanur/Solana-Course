@@ -3,7 +3,7 @@ use anchor_lang::solana_program::instruction::{AccountMeta, Instruction};
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::memo::Memo;
-use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Approve, Burn, Mint, MintTo, Revoke, Token, TokenAccount, Transfer};
 use anchor_spl::token_2022::Token2022;
 
 declare_id!("5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH");
@@ -310,10 +310,6 @@ pub mod liquidity_vault {
                 && ctx
                     .remaining_accounts
                     .iter()
-                    .any(|account| account.key() == ctx.accounts.position_nft_mint.key())
-                && ctx
-                    .remaining_accounts
-                    .iter()
                     .any(|account| account.key() == ctx.accounts.position_nft_account.key()),
             VaultError::InvalidPositionAccounts
         );
@@ -371,6 +367,35 @@ pub mod liquidity_vault {
             );
         }
 
+        let bump = [ctx.accounts.config.bump];
+        let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &bump]];
+        if open_position {
+            token::approve(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    Approve {
+                        to: ctx.accounts.vault_token_a.to_account_info(),
+                        delegate: ctx.accounts.admin.to_account_info(),
+                        authority: ctx.accounts.config.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                u64::MAX,
+            )?;
+            token::approve(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    Approve {
+                        to: ctx.accounts.vault_token_b.to_account_info(),
+                        delegate: ctx.accounts.admin.to_account_info(),
+                        authority: ctx.accounts.config.to_account_info(),
+                    },
+                    signer_seeds,
+                ),
+                u64::MAX,
+            )?;
+        }
+
         let mut metas = Vec::with_capacity(ctx.remaining_accounts.len());
         let mut account_infos = Vec::with_capacity(ctx.remaining_accounts.len() + 1);
         for (info, flags) in ctx.remaining_accounts.iter().zip(account_flags.iter()) {
@@ -399,9 +424,25 @@ pub mod liquidity_vault {
             data: instruction_data,
         };
         account_infos.push(ctx.accounts.raydium_program.to_account_info());
-        let bump = [ctx.accounts.config.bump];
-        let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &bump]];
         invoke_signed(&instruction, &account_infos, signer_seeds)?;
+        if open_position {
+            token::revoke(CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Revoke {
+                    source: ctx.accounts.vault_token_a.to_account_info(),
+                    authority: ctx.accounts.config.to_account_info(),
+                },
+                signer_seeds,
+            ))?;
+            token::revoke(CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Revoke {
+                    source: ctx.accounts.vault_token_b.to_account_info(),
+                    authority: ctx.accounts.config.to_account_info(),
+                },
+                signer_seeds,
+            ))?;
+        }
         msg!("Vault CLMM position instruction completed");
         Ok(())
     }
@@ -677,6 +718,8 @@ pub struct ManageClmmPosition<'info> {
 
     #[account(mut, token::authority = config)]
     pub vault_token_b: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
 
     #[account(address = RAYDIUM_CLMM_PROGRAM_ID)]
     pub raydium_program: UncheckedAccount<'info>,

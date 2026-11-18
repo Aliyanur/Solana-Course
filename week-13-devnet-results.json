@@ -1,0 +1,68 @@
+{
+  "network": "devnet",
+  "owner": "9S3hAYkk3E5zirtVy5L8kkhAG4EkyHSKqTno9n7z6M1X",
+  "vaultProgram": "5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH",
+  "vaultConfig": "G5atWCrsiuATrz8GFSzvoqcXnVWDcBLQjqvAMtsjqhXg",
+  "pool": "G4a4wNJX5wm1FwgtFCN5Df6cjNmMEvbbstbuJ47iLene",
+  "tokenA": {
+    "mint": "4WW32cTZrLnPBvdD9eAmVaYdyAm2Gvp3KzGyU9t7F2c8",
+    "vaultAccount": "JDwTmRVubL4FRMr8tJCxQViv1CTrp17JypycmwqZQuCP"
+  },
+  "tokenB": {
+    "mint": "8SbNbt2fXwpALoegEDGhUt2n9KnCbFTG4xg6LU18WQYZ",
+    "vaultAccount": "4qjFJLJVeCrmCTdSKvSoMCa8ZG1kXuF8MJbEzx53adjT"
+  },
+  "funding": {
+    "amountEach": "20",
+    "signatures": []
+  },
+  "initialPosition": {
+    "nftMint": "4eA63S4uyWcRetzDRx9M9URuEWcwdDSpmgbHJHsNRad2",
+    "nftAccount": "CnMHQVCrmbHUsL591ebK9DKbpCjVpES3Nd7q3TeW1FXd",
+    "personalPosition": "2uff7WuftfwvZoJQA4LsxuKKvBMUm3J7UX3Axu44yanP",
+    "tickArrayLower": "6TSMGDW1tR7qBi5GJygKXywru6jnCX1phU2Yp8VBzqgY",
+    "tickArrayUpper": "6TSMGDW1tR7qBi5GJygKXywru6jnCX1phU2Yp8VBzqgY",
+    "tickLower": 120,
+    "tickUpper": 300,
+    "priceLower": "1.01207168166336263753",
+    "priceUpper": "1.03045298837590255861",
+    "signature": "mcsmRhhCFKMtsrVyQx3qvfRgxdaFdrxq3wtbcgdQYa2Bj8TTxLtu1eLn2kmde1brmrHMChWBANk1NuTuxXJqUrH"
+  },
+  "priceMoves": [
+    {
+      "amount": 10,
+      "signature": "GnqicP8NoCH6f4TMvPBkmG1mKMR2vqQneANwChnXZxoEzWJZ7a4PbWLouDYhkEiPjP32KzQJ56JUeg3zeZfN7k4",
+      "currentTick": 275,
+      "inRange": true
+    },
+    {
+      "amount": 20,
+      "signature": "3s98W1fwr1HJVxRWoAEm25tbi7X56UBSufUzjXds7WMvqiG7irRnXyH536v2tgz5zXYcpz3Ag1ZLvNFzQokUYy8g",
+      "currentTick": 434,
+      "inRange": false
+    }
+  ],
+  "collectedFeesRaw": {
+    "tokenA": "0",
+    "tokenB": "10804",
+    "total": "10804"
+  },
+  "decreaseSignature": "4xeZamgxzZWsYUUeST77BMMJZRa3zzN3239GuUUU3ZffW1gsQShuhJXRXGWQxquz7TrReUUscxLySZvcim2wu4Ny",
+  "closeSignature": "3hhJ7iXiyGrFYZDxdeP5sLHQNKj1UM1mUnCoJCpqW5Pudj4X12B4XkMA1UngP7xb9YeEJebM6w3ZkfNUvPZ8YusV",
+  "replacementPosition": {
+    "nftMint": "J5HFit2Z3im9rFzf3PUYFd8prQsFaaRj15LgSUPmHv72",
+    "nftAccount": "AW495aYFVQLMfCd6Ha5iBzZh6TY9aTn5QtTjTBY1vUqx",
+    "personalPosition": "9MQJ5Rn1YCw52P5kkEqSZ5MH82h3Ros51pF39Ph733xH",
+    "tickArrayLower": "6TSMGDW1tR7qBi5GJygKXywru6jnCX1phU2Yp8VBzqgY",
+    "tickArrayUpper": "6TSMGDW1tR7qBi5GJygKXywru6jnCX1phU2Yp8VBzqgY",
+    "tickLower": 360,
+    "tickUpper": 540,
+    "priceLower": "1.03665398063645649549",
+    "priceUpper": "1.05548175254045551395",
+    "signature": "4haWW37CHWg8tRvANNmANSuasV6yLcaSXVoXDwjh1jBGh4M9CQBmosigmF3SxPyKi1FdqfFJj9KfzinKxG6ndFFL"
+  },
+  "finalVaultBalancesRaw": {
+    "tokenA": "10000000",
+    "tokenB": "31787118"
+  }
+}

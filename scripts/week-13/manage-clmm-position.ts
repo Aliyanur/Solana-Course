@@ -3,11 +3,10 @@ import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
-import { getAccount, getAssociatedTokenAddress, transfer } from '@solana/spl-token'
+import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID, transfer } from '@solana/spl-token'
 import { AddressLookupTableProgram, Connection, Keypair, PublicKey, Transaction, TransactionInstruction, TransactionMessage, VersionedTransaction, clusterApiUrl, sendAndConfirmTransaction } from '@solana/web3.js'
 import { ClmmInstrument, DEVNET_PROGRAM_ID, getPdaPersonalPositionAddress, getPdaTickArrayAddress, PersonalPositionLayout, PositionUtils, Raydium, TickArrayLayout, TickArrayUtil, TickUtil, TxVersion } from '@raydium-io/raydium-sdk-v2'
 import BN from 'bn.js'
-import { Decimal } from 'decimal.js'
 
 const vaultProgramId = new PublicKey('5Mt5EcuiqoizEPsFC6Rqz7ZwoVTAdMzbvHLiDB4DxoNH')
 const clmmProgramId = DEVNET_PROGRAM_ID.CLMM_PROGRAM_ID
@@ -77,7 +76,6 @@ function u32(value: number): Buffer {
 }
 
 function serializeCpi(ix: TransactionInstruction): Buffer {
-  const accountKeys = ix.keys.map((key) => key.pubkey)
   const flags = ix.keys.map((key) => (key.isSigner ? 1 : 0) | (key.isWritable ? 2 : 0))
   return Buffer.concat([
     discriminator('manage_clmm_position'),
@@ -129,6 +127,7 @@ async function callPositionCpi(ix: TransactionInstruction, nftMint: PublicKey, n
     { pubkey: nftAccount, isSigner: false, isWritable: true },
     { pubkey: vaultTokenA, isSigner: false, isWritable: true },
     { pubkey: vaultTokenB, isSigner: false, isWritable: true },
+    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     { pubkey: clmmProgramId, isSigner: false, isWritable: false },
     ...ix.keys.map((key) => ({ ...key, isSigner: key.isSigner && signers.some((signer) => signer.publicKey.equals(key.pubkey)) }))
   ]
@@ -144,18 +143,24 @@ async function callPositionCpi(ix: TransactionInstruction, nftMint: PublicKey, n
   return signature
 }
 
-async function findRange(price: number) {
-  const percent = rangeBps / 10000
+function findRange(tickCurrent: number) {
   const spacing = poolInfo.config.tickSpacing
-  const lower = TickUtil.getPriceAndTick({ price: new Decimal(price * (1 - percent)), mintADecimals: tokenA.decimals, mintBDecimals: tokenB.decimals, zeroForOne: true, tickSpacing: spacing })
-  const upper = TickUtil.getPriceAndTick({ price: new Decimal(price * (1 + percent)), mintADecimals: tokenA.decimals, mintBDecimals: tokenB.decimals, zeroForOne: true, tickSpacing: spacing })
-  return { tickLower: Math.min(lower.tick, upper.tick), tickUpper: Math.max(lower.tick, upper.tick), priceLower: lower.price.toString(), priceUpper: upper.price.toString() }
+  const width = Math.max(spacing, Math.ceil(Math.log(1 + rangeBps / 10000) / Math.log(1.0001)))
+  const tickLower = Math.floor((tickCurrent - width) / spacing) * spacing
+  const tickUpper = Math.ceil((tickCurrent + width) / spacing) * spacing
+  return {
+    tickLower,
+    tickUpper,
+    priceLower: TickUtil.tickToPrice(tickLower, tokenA.decimals, tokenB.decimals).toString(),
+    priceUpper: TickUtil.tickToPrice(tickUpper, tokenA.decimals, tokenB.decimals).toString()
+  }
 }
 
 async function openPosition() {
   const poolState = await raydium.clmm.getRpcClmmPoolInfo({ poolId })
-  const range = await findRange(poolState.currentPrice)
+  const range = findRange(poolState.tickCurrent)
   const baseAmount = new BN(Math.round(positionAmountUi * 10 ** tokenA.decimals))
+  const otherAmountMax = new BN(Math.ceil(positionAmountUi * poolState.currentPrice * 3 * 10 ** tokenB.decimals))
   const position = await ClmmInstrument.openPositionFromBaseInstructions({
     poolInfo: simplePoolInfo,
     poolKeys,
@@ -164,7 +169,7 @@ async function openPosition() {
     tickUpper: range.tickUpper,
     base: 'MintA',
     baseAmount,
-    otherAmountMax: baseAmount.muln(2),
+    otherAmountMax,
     liquidity: new BN(0),
     withMetadata: 'no-create'
   })
@@ -176,6 +181,21 @@ async function openPosition() {
   if (!ix) throw new Error('Raydium SDK did not create an open-position instruction.')
   const signature = await callPositionCpi(ix, nftMint, nftAccount, position.signers as Keypair[])
   return { nftMint, nftAccount, personalPosition: position.address.personalPosition, tickArrayLower: position.address.tickArrayLower, tickArrayUpper: position.address.tickArrayUpper, tickLower: range.tickLower, tickUpper: range.tickUpper, priceLower: range.priceLower, priceUpper: range.priceUpper, signature }
+}
+
+async function loadPosition(nftMint: PublicKey) {
+  const nftAccount = await getAssociatedTokenAddress(nftMint, config, true)
+  const personalPosition = getPdaPersonalPositionAddress(clmmProgramId, nftMint).publicKey
+  const account = await connection.getAccountInfo(personalPosition, 'confirmed')
+  if (!account || !account.owner.equals(clmmProgramId)) throw new Error('The requested open CLMM position was not found.')
+  const position = PersonalPositionLayout.decode(account.data)
+  if (!position.poolId.equals(poolId)) throw new Error('The requested position belongs to another pool.')
+  const pool = await raydium.clmm.getRpcClmmPoolInfo({ poolId })
+  const tickArrayLower = getPdaTickArrayAddress(clmmProgramId, poolId, TickArrayUtil.getTickArrayStartIndex(position.tickLower, pool.tickSpacing)).publicKey
+  const tickArrayUpper = getPdaTickArrayAddress(clmmProgramId, poolId, TickArrayUtil.getTickArrayStartIndex(position.tickUpper, pool.tickSpacing)).publicKey
+  const lowerPrice = TickUtil.tickToPrice(position.tickLower, tokenA.decimals, tokenB.decimals)
+  const upperPrice = TickUtil.tickToPrice(position.tickUpper, tokenA.decimals, tokenB.decimals)
+  return { nftMint, nftAccount, personalPosition, tickArrayLower, tickArrayUpper, tickLower: position.tickLower, tickUpper: position.tickUpper, priceLower: lowerPrice.toString(), priceUpper: upperPrice.toString(), signature: 'resumed' }
 }
 
 async function movePrice(amountUi: number) {
@@ -237,17 +257,21 @@ async function decreaseAndClose(position: Awaited<ReturnType<typeof openPosition
   return { decreaseSignature, closeSignature, feesA: info.feesA.toString(), feesB: info.feesB.toString(), feeTotal: feeTotal.toString() }
 }
 
-const initialPosition = await openPosition()
+const resumeMint = process.env.WEEK13_RESUME_NFT_MINT
+const initialPosition = resumeMint ? await loadPosition(new PublicKey(resumeMint)) : await openPosition()
 const priceMoves: { amount: number; signature: string; currentTick: number; inRange: boolean }[] = []
-let rangeExited = false
-for (const amount of [10, 20, 30]) {
-  const signature = await movePrice(amount)
-  const state = await raydium.clmm.getRpcClmmPoolInfo({ poolId })
-  const inRange = state.tickCurrent >= initialPosition.tickLower && state.tickCurrent < initialPosition.tickUpper
-  priceMoves.push({ amount, signature, currentTick: state.tickCurrent, inRange })
-  if (!inRange) {
-    rangeExited = true
-    break
+const startingPool = await raydium.clmm.getRpcClmmPoolInfo({ poolId })
+let rangeExited = startingPool.tickCurrent < initialPosition.tickLower || startingPool.tickCurrent >= initialPosition.tickUpper
+if (!rangeExited) {
+  for (const amount of [10, 20, 30]) {
+    const signature = await movePrice(amount)
+    const state = await raydium.clmm.getRpcClmmPoolInfo({ poolId })
+    const inRange = state.tickCurrent >= initialPosition.tickLower && state.tickCurrent < initialPosition.tickUpper
+    priceMoves.push({ amount, signature, currentTick: state.tickCurrent, inRange })
+    if (!inRange) {
+      rangeExited = true
+      break
+    }
   }
 }
 if (!rangeExited) throw new Error('Devnet price stayed inside the initial range. The first position remains open; try a larger WEEK13_RANGE_BPS or trade amount.')
